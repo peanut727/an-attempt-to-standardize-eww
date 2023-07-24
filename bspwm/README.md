@@ -1,2 +1,5 @@
-gay
+# BSPWM Configuration
 
+---
+
+## Dependencies
