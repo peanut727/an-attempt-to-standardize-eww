@@ -1,4 +1,5 @@
-(deflisten workspaces "./scripts/workspaces")
+(deflisten workspaces :initial "[]" "bash ~/.config/eww/scripts/get-workspaces")
+(deflisten current_workspace :initial "1" "bash ~/.config/eww/scripts/get-active-workspace")
 (deflisten window :initial "..." "sh ./scripts/activewindowname")
 (defpoll wifi-icon :interval "10s" "./scripts/wifi icon")
 (defpoll wifi-strength :interval "10s" "./scripts/wifi percentage")
@@ -20,25 +21,45 @@
 (defvar bat-rev false)
 (defvar br-rev false)
 
+
 (defwidget workspaces []
-  (literal :content workspaces))
+  (eventbox :onscroll "bash ~/.config/eww/scripts/change-active-workspace {} ${current_workspace}" :class "workspaces-widget"
+    (box :space-evenly true
+         :spacing 10
+      (label :text "${workspaces}${current_workspace}" :visible false)
+      (for workspace in workspaces
+        (eventbox :onclick "hyprctl dispatch workspace ${workspace.id}"
+          (box :class "workspace-entry ${workspace.id == current_workspace ? "current" : ""} ${workspace.windows > 0 ? "occupied" : "empty"}"
+            (label :text "${workspace.id}")
+            )
+          )
+        )
+      )
+    )
+  )
 
 (defwidget cpu []
   (box
     :class "bar-cpu"
     :orientation "h"
-    :halign "start"
-    (label :text "󰓅 ${cpu}")))
+    :halign "center"
+    (label :text " ${round(EWW_CPU.avg, 0)}%")))
+
+
 
 (defwidget memory []
   (box
     :class "bar-memory"
     :orientation "h"
     :halign "start"
-    (label :text "󰆼 ${mem}")))
+    (label :text " ${round((EWW_RAM.used_mem) / (1024 * 1024 * 1024), 1)}G")
+    (label :text "|${round((EWW_RAM.available_mem) / (1024 * 1024 * 1024), 1)}G")))
+
+
 
 (defwidget window_w []
-  (box :class "window-name"
+  (box :class "w-name"
+       :halign "center"
     (label :text "${window}")))
 
 (defwidget wifi []
@@ -141,12 +162,9 @@
   (box
     :class "bar-left"
     :halign "start"
-    :spacing 0
+    :spacing 5
     :space-evenly false
-    (workspaces)
-    (cpu)
-    (memory)
-    (window_w)))
+    (workspaces)))
 
 (defwidget right []
   (box
@@ -154,12 +172,19 @@
     :halign "end"
     :spacing 0
     :space-evenly false
+    (cpu)
+    (memory)
     (date)
     (time)
     (side)))
 
 (defwidget nothing []
-  (box :class "nothing"))
+  (box 
+    :class "bar-center"
+    :halign "center"
+    :spacing 0
+    :space-evenly false
+    (window_w)))
 
 (defwidget bar []
   (centerbox :orientation "h"
@@ -173,9 +198,9 @@
   :monitor 0
   :exclusive true
   :geometry (geometry
-              :x "0px"
-              :y "0px"
+              :x "0%"
+              :y "0%"
               :width "100%"
-              :height "50px"
+              :height "1px"
               :anchor "top center")
   (bar))
